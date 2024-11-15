@@ -1,6 +1,9 @@
 import urllib.request
 import json
 
+def makeDate(year, month, day):
+    return str(year) + "-" + str(month) + "-" + str(day)
+
 class Securities:
     def __init__(self, ticker):
         self.ticker = ticker
@@ -15,17 +18,25 @@ class Securities:
         engineIdx = data['boards']['columns'].index('engine')
         marketIdx = data['boards']['columns'].index('market')
         boardIdx = data['boards']['columns'].index('boardid')
-        return data['boards']['data'][0][engineIdx], data['boards']['data'][0][marketIdx], data['boards']['data'][0][boardIdx]
+        dataData = data['boards']['data'][0]
+        return dataData[engineIdx], dataData[marketIdx], dataData[boardIdx]
 
-    def getCandles(self, dateFrom, dateTill=-1, interval=24):
-        if dateTill == -1:
-            dateTill = dateFrom
-        url = f'https://iss.moex.com/iss/engines/{self.engine}/markets/{self.market}/boards/{self.board}/securities/{self.ticker}/candles.json?from={dateFrom}&till={dateTill}&interval={interval}'
+    def getCandle(self, year, month, day):
+        dateTill = makeDate(year, month, day)
+        step = 7
+        if day > step:
+            day -= step
+        elif month > 1:
+            month -= 1
+            day += 28 - step
+        else:
+            year -= 1
+            month += 12 - 1
+            day += 28 - step
+        dateFrom = makeDate(year, month, day)
+        url = f'https://iss.moex.com/iss/engines/{self.engine}/markets/{self.market}/boards/{self.board}/securities/{self.ticker}/candles.json?from={dateFrom}&till={dateTill}&interval=24'
         response = urllib.request.urlopen(url)
         data = json.loads(response.read().decode('utf-8'))
         #candles = [[ticker, dateFrom, interval] + i[:4] for i in data['candles']['data']]
         candles = [i[:4] for i in data['candles']['data']]
-        return candles
-
-mySec = Securities("MOEX")
-print(mySec.getCandles("2024-11-13"))
+        return candles[len(candles)-1:]

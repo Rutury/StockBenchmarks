@@ -4,6 +4,9 @@ import json
 def makeDate(year, month, day):
     return str(year) + "-" + str(month) + "-" + str(day)
 
+def makeNumbers(date):
+    return [int(i) for i in date.split('-')]
+
 class Securities:
     def __init__(self, ticker):
         self.ticker = ticker
@@ -20,8 +23,12 @@ class Securities:
         boardIdx = data['boards']['columns'].index('boardid')
         dataData = data['boards']['data'][0]
         return dataData[engineIdx], dataData[marketIdx], dataData[boardIdx]
+    
+    def getPriceDate(self, date):
+        year, month, day = makeNumbers(date)
+        return self.getPriceYMD(year, month, day)
 
-    def getCandle(self, year, month, day):
+    def getPriceYMD(self, year, month, day):
         dateTill = makeDate(year, month, day)
         step = 7
         if day > step:
@@ -36,7 +43,14 @@ class Securities:
         dateFrom = makeDate(year, month, day)
         url = f'https://iss.moex.com/iss/engines/{self.engine}/markets/{self.market}/boards/{self.board}/securities/{self.ticker}/candles.json?from={dateFrom}&till={dateTill}&interval=24'
         response = urllib.request.urlopen(url)
-        data = json.loads(response.read().decode('utf-8'))
-        #candles = [[ticker, dateFrom, interval] + i[:4] for i in data['candles']['data']]
-        candles = [i[:4] for i in data['candles']['data']]
-        return candles[len(candles)-1:]
+        response = json.loads(response.read().decode('utf-8'))['candles']
+        data = response['data']
+        if not data:
+            return -1
+        else:
+            data = data[len(data) - 1]
+        closeIdx = response['columns'].index('close')
+        return data[closeIdx]
+        # valueIdx = response['columns'].index('value')
+        # volumeIdx = response['columns'].index('volume')
+        # return data[valueIdx] / data[volumeIdx]

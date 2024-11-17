@@ -21,4 +21,4 @@ securities = {
 ])
 def test_tickers(ticker, date):
     idx = dates.index(date)
-    assert securities[ticker].getPriceDate(dates[idx]) == prices[ticker][idx]
+    assert securities[ticker].getPrice(dates[idx]) == prices[ticker][idx]
